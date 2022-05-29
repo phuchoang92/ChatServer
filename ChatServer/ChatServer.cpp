@@ -17,6 +17,17 @@ int numConnected = 0;
 
 map<SOCKET, char*> accTable;
 
+const char* successAuth = "[CONNECT] OK\n";
+const char* signIn = "Moi ban nhap id cua minh!\n";
+const char* syntaxError = "[ERROR] Wrong syntax\n";
+
+int CheckAccExist(char* accName) {
+    for (auto& it : accTable)
+        if (strcmp(accName, it.second) == 0)
+            return 1;
+    return 0;
+}
+
 void RemoveClient(SOCKET client)
 {
     int i = 0;
@@ -49,59 +60,54 @@ DWORD WINAPI ClientThread(LPVOID param) {
 
     int ret;
 
-    char idInput[30];
-
-    const char* signIn = "Moi ban nhap id cua minh!\n";
-    const char* successAuth = "[CONNECT] OK\n";
+    char idInput[256];
+    char cmd[32], id[32], tmp[32];
 
     send(client, signIn, strlen(signIn), 0);
 
     while (true)
     {
         ret = recv(client, idInput, sizeof(idInput), 0);
-        idInput[ret-1] = 0;
-        int found = 0;
+        idInput[ret] = 0;
 
-        FILE* f = fopen("C:\\Users\\Phuc\\Desktop\\csdl.txt", "r");
-
-        while (!feof(f))
+        ret = sscanf(idInput, "%s %s %s", cmd, id, tmp);
+        if (ret != 2)
         {
-            char line[256];
-            fgets(line, sizeof(line), f);
-            
-            char user[32];
-            sscanf(line, "%s", user);
-
-            if (strcmp(idInput, user)==0)
-            {
-                found = 1;
-                break;
-            }
+            send(client, syntaxError, strlen(syntaxError), 0);
         }
 
-        fclose(f);
-
-        if (found == 1)
-        {
-            send(client, successAuth, strlen(successAuth), 0);
-            connected[numConnected] = client;
-            accTable[connected[numConnected]] = idInput;
-            numConnected++;
-
-            char msg[30];
-            sprintf(msg, "[USER_CONNECT] %s - New user enters chat room!\n", accTable[client]);
-            SendAll(client, msg, 0);
-            break;
-        }
         else
         {
-            const char* msg = "[CONNECT] ERROR - This user's id does not exist!\n";
-            send(client, msg, strlen(msg), 0);
+            if (strcmp(cmd, "[CONNECT]") != 0)
+            {
+                send(client, syntaxError, strlen(syntaxError), 0);
+            }
+            else
+            {
+                int found = CheckAccExist(id);
+
+                if (found == 0)
+                {
+                    send(client, successAuth, strlen(successAuth), 0);
+                    connected[numConnected] = client;
+                    memcpy(accTable[client], id, strlen(id));
+                    numConnected++;
+
+                    char msg[30];
+                    sprintf(msg, "[USER_CONNECT] %s - New user enters chat room!\n", accTable[client]);
+                    SendAll(client, msg, 0);
+                    break;
+                }
+                else
+                {
+                    const char* msg = "[CONNECT] ERROR - This user's id already exist!\n";
+                    send(client, msg, strlen(msg), 0);
+                }
+            }
         }
     }
 
     char buff[256];
-    char cmd[32], id[32];
 
     while (true)
     {
@@ -173,7 +179,7 @@ DWORD WINAPI ClientThread(LPVOID param) {
             sprintf(msg, "[USER_DISCONNECT] %s\n",accTable[client]);
             SendAll(client, msg, 0);
             RemoveClient(client);
-            closesocket(client);
+            accTable.erase(client);
             break;
         }
     

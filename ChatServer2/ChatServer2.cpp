@@ -77,7 +77,6 @@ int main() {
         ret = select(0, &fdread, 0, 0, 0);
         if (ret > 0)
         {
-            
             if (FD_ISSET(listener, &fdread))
             {
                 SOCKET client = accept(listener, NULL, NULL);
@@ -107,7 +106,6 @@ int main() {
                         if (connected[j] == client) break;
                     if (j == numConnected)
                     {
-                        
                         ret = sscanf(buf, "%s %s %s", cmd, id, tmp);
 
                         if (ret != 2)
