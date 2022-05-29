@@ -21,7 +21,8 @@ const char* successAuth = "[CONNECT] OK\n";
 const char* signIn = "Moi ban nhap id cua minh!\n";
 const char* syntaxError = "[ERROR] Wrong syntax\n";
 
-int CheckAccExist(char* accName) {
+int CheckAccExist(char* accName)
+{
     for (auto& it : accTable)
         if (strcmp(accName, it.second) == 0)
             return 1;
@@ -41,8 +42,8 @@ void RemoveClient(SOCKET client)
 }
 
 int SendAll(SOCKET client, char* data, int jump)
-{ 
-    int success = 0 ;
+{
+    int success = 0;
     for (int i = 0; i < numConnected; i++)
     {
         if (connected[i] != client)
