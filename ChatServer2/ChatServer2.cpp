@@ -17,6 +17,17 @@ map<SOCKET, char[32]> accTable;
 
 const char* syntaxError = "[ERROR] Wrong syntax\n";
 
+bool CheckAccExist(char * accName) {
+    for ( auto&it :accTable )
+    {
+        if (strcmp(accName, it.second)==0)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
 void RemoveClient(SOCKET* clients, int* numClients, int i)
 {
     if (i < *numClients - 1)
@@ -111,16 +122,24 @@ int main() {
                             }
                             else
                             {
-                                char msgAll[32];
-                                const char* msg = "[CONNECT] OK\n";
-                                sprintf(msgAll, "[USER_CONNECT] %s - New user enters chat room!\n", id);
+                                if (!CheckAccExist(id))
+                                {
+                                    char msgAll[32];
+                                    const char* msg = "[CONNECT] OK\n";
+                                    sprintf(msgAll, "[USER_CONNECT] %s - New user enters chat room!\n", id);
 
-                                send(client, msg, strlen(msg), 0);
-                                SendAll(client, msgAll, 0);
+                                    send(client, msg, strlen(msg), 0);
+                                    SendAll(client, msgAll, 0);
 
-                                connected[numConnected] = client;
-                                memcpy(accTable[client], id, strlen(id));
-                                numConnected++;
+                                    connected[numConnected] = client;
+                                    memcpy(accTable[client], id, strlen(id));
+                                    numConnected++;
+                                }
+                                else
+                                {
+                                    const char* msg = "This id has existed. Please enter different id!\n";
+                                    send(client, msg, strlen(msg), 0);
+                                }
                             }
                         }
                     }
@@ -133,7 +152,7 @@ int main() {
 
                         if (strcmp(cmd, "[DISCONNECT]") == 0) {
                             char msg[32];
-                            sprintf(msg, "[USER_DISCONNECT] %s\n", id);
+                            sprintf(msg, "[USER_DISCONNECT] %s\n", accTable[connected[i]]);
                             SendAll(client, msg, 0);
                             RemoveClient(connected, &numConnected, i);
                             accTable.erase(client);
