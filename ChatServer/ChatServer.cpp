@@ -34,10 +34,9 @@ void RemoveClient(SOCKET client)
     for (; i < numConnected; i++)
         if (connected[i] == client) break;
     
-    if (i < numConnected - 1)
+    if (i < numConnected - 1) {
         connected[i] = connected[numConnected - 1];
-        clients[i] = clients[numClients - 1];
-    numClients--;
+    }
     numConnected--;
 }
 
@@ -64,127 +63,131 @@ DWORD WINAPI ClientThread(LPVOID param) {
     char cmd[32], id[32], tmp[32];
 
     send(client, signIn, strlen(signIn), 0);
-
+    
     while (true)
     {
-        ret = recv(client, idInput, sizeof(idInput), 0);
-        idInput[ret] = 0;
 
-        ret = sscanf(idInput, "%s %s %s", cmd, id, tmp);
-        if (ret != 2)
+        while (true)
         {
-            send(client, syntaxError, strlen(syntaxError), 0);
-        }
+            ret = recv(client, idInput, sizeof(idInput), 0);
+            idInput[ret] = 0;
 
-        else
-        {
-            if (strcmp(cmd, "[CONNECT]") != 0)
+            ret = sscanf(idInput, "%s %s %s", cmd, id, tmp);
+            if (ret != 2)
             {
                 send(client, syntaxError, strlen(syntaxError), 0);
             }
+
             else
             {
-                int found = CheckAccExist(id);
-
-                if (found == 0)
+                if (strcmp(cmd, "[CONNECT]") != 0)
                 {
-                    send(client, successAuth, strlen(successAuth), 0);
-                    connected[numConnected] = client;
-                    memcpy(accTable[client], id, strlen(id));
-                    numConnected++;
-
-                    char msg[32];
-                    sprintf(msg, "[USER_CONNECT] %s - New user enters chat room!\n", accTable[client]);
-                    SendAll(client, msg, 0);
-                    break;
+                    send(client, syntaxError, strlen(syntaxError), 0);
                 }
                 else
                 {
-                    const char* msg = "[CONNECT] ERROR - This user's id already exist!\n";
-                    send(client, msg, strlen(msg), 0);
-                }
-            }
-        }
-    }
+                    int found = CheckAccExist(id);
 
-    char buff[256];
-
-    while (true)
-    {
-        ret = recv(client, buff, sizeof(buff), 0);
-        buff[ret] = 0;
-        printf("Data from %d: %s",(int)client, buff);
-
-        ret = sscanf(buff, "%s %s", cmd, id);
-
-        int lengthCode = strlen(cmd) + strlen(id) + 2;
-
-        if (strcmp(cmd, "[SEND]")==0)
-        {
-            int success = 0;
-            if (strcmp(id, "ALL") == 0)
-            {
-                char msg[32];
-                sprintf(msg, "[MESSAGE_ALL] %s: %s", accTable[client], buff + lengthCode);
-                success = SendAll(client, msg, 0);
-            }
-            else
-            {
-                for (int i = 0; i < numConnected; i++)
-                {
-                    if (strncmp(id, accTable[connected[i]], strlen(id))==0)
+                    if (found == 0)
                     {
+                        send(client, successAuth, strlen(successAuth), 0);
+                        connected[numConnected] = client;
+                        memcpy(accTable[client], id, strlen(id));
+                        numConnected++;
+
                         char msg[32];
-                        sprintf(msg, "[MESSAGE] %s: %s", accTable[client], buff + lengthCode);
-                        success = send(connected[i], msg, strlen(msg), 0);
+                        sprintf(msg, "[USER_CONNECT] %s - New user enters chat room!\n", accTable[client]);
+                        SendAll(client, msg, 0);
                         break;
+                    }
+                    else
+                    {
+                        const char* msg = "[CONNECT] ERROR - This user's id already exist!\n";
+                        send(client, msg, strlen(msg), 0);
                     }
                 }
             }
-            if (success)
-            {
-                const char* msg = "[SEND] OK-Gui tin nhan thanh cong!\n";
-                send(client, msg, strlen(msg), 0);
-            }
-
-            else
-            {
-                const char* msg = "[SEND] ERROR error_message - Gui tin nhan that bai!\n";
-                send(client, msg, strlen(msg), 0);
-            }
-
         }
 
-        else if (strcmp(cmd, "[LIST]") == 0)
+        char buff[256];
+
+        while (true)
         {
-            char temp[256] = "[LIST] OK";
+            ret = recv(client, buff, sizeof(buff), 0);
+            buff[ret] = 0;
+            printf("Data from %d: %s",(int)client, buff);
 
-            for (int i = 0; i < numConnected; i++)
+            ret = sscanf(buff, "%s %s", cmd, id);
+
+            int lengthCode = strlen(cmd) + strlen(id) + 2;
+
+            if (strcmp(cmd, "[SEND]")==0)
             {
-                sprintf(temp + strlen(temp), " %s", accTable[connected[i]]);
+                int success = 0;
+                if (strcmp(id, "ALL") == 0)
+                {
+                    char msg[32];
+                    sprintf(msg, "[MESSAGE_ALL] %s: %s", accTable[client], buff + lengthCode);
+                    success = SendAll(client, msg, 0);
+                }
+                else
+                {
+                    for (int i = 0; i < numConnected; i++)
+                    {
+                        if (strncmp(id, accTable[connected[i]], strlen(id))==0)
+                        {
+                            char msg[32];
+                            sprintf(msg, "[MESSAGE] %s: %s", accTable[client], buff + lengthCode);
+                            success = send(connected[i], msg, strlen(msg), 0);
+                            break;
+                        }
+                    }
+                }
+                if (success)
+                {
+                    const char* msg = "[SEND] OK-Gui tin nhan thanh cong!\n";
+                    send(client, msg, strlen(msg), 0);
+                }
+
+                else
+                {
+                    const char* msg = "[SEND] ERROR error_message - Gui tin nhan that bai!\n";
+                    send(client, msg, strlen(msg), 0);
+                }
+
             }
 
-            temp[strlen(temp)] = '\n';
+            else if (strcmp(cmd, "[LIST]") == 0)
+            {
+                char temp[256] = "[LIST] OK";
 
-            int ret = send(client, temp, strlen(temp), 0);
+                for (int i = 0; i < numConnected; i++)
+                {
+                    sprintf(temp + strlen(temp), " %s", accTable[connected[i]]);
+                }
+
+                temp[strlen(temp)] = '\n';
+
+                int ret = send(client, temp, strlen(temp), 0);
             
-            if (ret < 0)
-            {
-                const char* msg = "[LIST] ERROR - Lay danh sach that bai!";
-                send(client, msg, strlen(msg), 0);
+                if (ret < 0)
+                {
+                    const char* msg = "[LIST] ERROR - Lay danh sach that bai!";
+                    send(client, msg, strlen(msg), 0);
+                }
             }
-        }
 
-        else if (strcmp(cmd, "[DISCONNECT]") == 0) {
-            char msg[32];
-            sprintf(msg, "[USER_DISCONNECT] %s\n",accTable[client]);
-            SendAll(client, msg, 0);
-            RemoveClient(client);
-            accTable.erase(client);
-            break;
-        }
+            else if (strcmp(cmd, "[DISCONNECT]") == 0) {
+                char msg[32];
+                sprintf(msg, "[USER_DISCONNECT] %s\n",accTable[client]);
+                SendAll(client, msg, 0);
+                RemoveClient(client);
+                accTable.erase(client);
+                break;
+            }
 
-        else send(client, syntaxError, strlen(syntaxError), 0);   
+            else send(client, syntaxError, strlen(syntaxError), 0);   
+        }
     }
 }
 
