@@ -15,7 +15,7 @@ int numClients = 0;
 SOCKET connected[64];
 int numConnected = 0;
 
-map<SOCKET, char*> accTable;
+map<SOCKET, char[32]> accTable;
 
 const char* successAuth = "[CONNECT] OK\n";
 const char* signIn = "Moi ban nhap id cua minh!\n";
@@ -36,10 +36,10 @@ void RemoveClient(SOCKET client)
     
     if (i < numConnected - 1)
         connected[i] = connected[numConnected - 1];
+        clients[i] = clients[numClients - 1];
+    numClients--;
     numConnected--;
 }
-
-
 
 int SendAll(SOCKET client, char* data, int jump)
 { 
@@ -113,7 +113,7 @@ DWORD WINAPI ClientThread(LPVOID param) {
     {
         ret = recv(client, buff, sizeof(buff), 0);
         buff[ret] = 0;
-        printf("%d: %s",(int)client, buff);
+        printf("Data from %d: %s",(int)client, buff);
 
         ret = sscanf(buff, "%s %s", cmd, id);
 
@@ -126,7 +126,7 @@ DWORD WINAPI ClientThread(LPVOID param) {
             {
                 char msg[32];
                 sprintf(msg, "[MESSAGE_ALL] %s: %s", accTable[client], buff + lengthCode);
-                success = SendAll(client, buff, lengthCode);
+                success = SendAll(client, msg, 0);
             }
             else
             {
@@ -183,15 +183,9 @@ DWORD WINAPI ClientThread(LPVOID param) {
             accTable.erase(client);
             break;
         }
-    
-        else
-        {
-            const char* msg = "[ERROR] Wrong syntax!\n";
-            send(client, msg, strlen(msg), 0);
-        }
-        
-    }
 
+        else send(client, syntaxError, strlen(syntaxError), 0);   
+    }
 }
 
 int main()
