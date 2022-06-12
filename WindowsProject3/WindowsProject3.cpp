@@ -265,13 +265,13 @@ LRESULT CALLBACK WndProcd(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             else if (strcmp(cmd, "LIST") == 0)
             {
 
-                sprintf(buf + ret - 1, "%s", " OK");
+                sprintf(buf + ret - 1, "%s", " ");
 
                 char delim[] = " ";
                 char* token = strtok(buf, delim);
 
                 while (token) {
-                    if (strcmp(token, "LIST") && strcmp(token, "OK") && strcmp(token, id))
+                    if (strcmp(token, "LIST") && strcmp(token, "OK"))
                     {
                         SendDlgItemMessageA(chatPage, IDC_LIST_CLIENT, LB_ADDSTRING, 0, (LPARAM)token);
                     }
@@ -293,7 +293,7 @@ LRESULT CALLBACK WndProcd(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     }
     case WM_PAINT:
         hdc = BeginPaint(hWnd, &ps);
-        // TODO: Add any drawing code here...
+
         EndPaint(hWnd, &ps);
         break;
     case WM_DESTROY:
