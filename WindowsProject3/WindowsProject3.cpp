@@ -164,31 +164,37 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    return TRUE;
 }
 
-char* sliceString(char* str, int start, int end)
-{
-
-    int i;
-    int size = (end - start) + 2;
-    char* output = (char*)malloc(size * sizeof(char));
-
-    for (i = 0; start <= end; start++, i++)
-    {
-        output[i] = str[start];
-    }
-
-    output[size] = 0;
-
-    return output;
-}
 
 void GetListOfUsers(char * id) {
+    char user[64][32];
     char buffer[256];
     send(client, "LIST", 5, 0);
 
-    int ret = recv(client, buffer, sizeof(buffer),0);
-    buffer[ret-1] = 0;
+    int length = recv(client, buffer, sizeof(buffer),0);
+
+    int it = 0;
+    int j = 0;
+
+    for (int i = 0; i < length-1; i++)
+    {
+        if (buffer[i] == ' ')
+        {
+            if (user[it][0] != NULL)
+            {
+                user[it][j] = '\0';
+            }
+            it += 1;
+            j = 0;
+        }
+        else
+        {
+            user[it][j] = buffer[i];
+            j += 1;
+        }
+
+    }
     
-    char delim[] = " ";
+    /*char delim[] = " ";
     char* token = strtok(buffer, delim);
 
     while (token) {
@@ -199,7 +205,7 @@ void GetListOfUsers(char * id) {
         }
 
         token = strtok(NULL, delim);
-    }
+    }*/
 }
 
 
