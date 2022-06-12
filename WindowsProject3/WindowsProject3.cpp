@@ -173,8 +173,8 @@ void GetListOfUsers(char * id) {
     send(client, "LIST", 5, 0);
 
     int length = recv(client, buffer, sizeof(buffer),0);
-    sprintf(buffer + length - 1, "%s"," ");
-   
+    sprintf(buffer + length - 1, "%s"," OK");
+    
     char delim[] = " ";
     char* token = strtok(buffer, delim);
 
