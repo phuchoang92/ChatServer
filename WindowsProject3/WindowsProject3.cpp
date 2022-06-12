@@ -166,30 +166,6 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    return TRUE;
 }
 
-
-void GetListOfUsers(char * id) {
-
-    char buffer[256];
-    send(client, "LIST", 5, 0);
-
-    int length = recv(client, buffer, sizeof(buffer),0);
-    sprintf(buffer + length - 1, "%s"," OK");
-    
-    char delim[] = " ";
-    char* token = strtok(buffer, delim);
-
-    while (token) {
-
-        if (strcmp(token, "LIST")&& strcmp(token, "OK")&&strcmp(token,id))
-        {
-            SendDlgItemMessageA(chatPage, IDC_LIST_CLIENT, LB_ADDSTRING, 0, (LPARAM)token);
-        }
-
-        token = strtok(NULL, delim);
-    }
-}
-
-
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     switch (message)
@@ -222,7 +198,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                     ShowWindow(chatPage, SW_SHOWDEFAULT);
                     WSAAsyncSelect(client, chatPage, WM_SOCKET, FD_READ);
 
-                    GetListOfUsers(id);
+                    send(client, "LIST", 5, 0);
+
                 }
                 else
                 {
@@ -285,6 +262,23 @@ LRESULT CALLBACK WndProcd(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             {
                 SendDlgItemMessageA(hWnd, IDC_LIST_CLIENT, LB_ADDSTRING, 0, (LPARAM)id);
             }
+            else if (strcmp(cmd, "LIST") == 0)
+            {
+
+                sprintf(buf + ret - 1, "%s", " OK");
+
+                char delim[] = " ";
+                char* token = strtok(buf, delim);
+
+                while (token) {
+                    if (strcmp(token, "LIST") && strcmp(token, "OK") && strcmp(token, id))
+                    {
+                        SendDlgItemMessageA(chatPage, IDC_LIST_CLIENT, LB_ADDSTRING, 0, (LPARAM)token);
+                    }
+                    token = strtok(NULL, delim);
+                }
+            }
+            
             else if (strcmp(cmd, "USER_DISCONNECT") == 0)
             {
                 int index = SendDlgItemMessageA(hWnd, IDC_LIST_CLIENT, LB_FINDSTRINGEXACT, 0, (LPARAM)id);
