@@ -17,7 +17,7 @@ int numConnected = 0;
 
 map<SOCKET, char[32]> accTable;
 
-const char* successAuth = "[CONNECT] OK\n";
+const char* successAuth = "CONNECT OK\n";
 const char* signIn = "Moi ban nhap id cua minh!\n";
 const char* syntaxError = "[ERROR] Wrong syntax\n";
 
@@ -63,15 +63,16 @@ DWORD WINAPI ClientThread(LPVOID param) {
     char idInput[256];
     char cmd[32], id[32], tmp[32];
 
-    send(client, signIn, strlen(signIn), 0);
+    //send(client, signIn, strlen(signIn), 0);
     
     while (true)
     {
-
         while (true)
         {
             ret = recv(client, idInput, sizeof(idInput), 0);
             idInput[ret] = 0;
+
+            printf("%s\n", idInput);
 
             ret = sscanf(idInput, "%s %s %s", cmd, id, tmp);
             if (ret != 2)
@@ -81,7 +82,7 @@ DWORD WINAPI ClientThread(LPVOID param) {
 
             else
             {
-                if (strcmp(cmd, "[CONNECT]") != 0)
+                if (strcmp(cmd, "CONNECT") != 0)
                 {
                     send(client, syntaxError, strlen(syntaxError), 0);
                 }
@@ -97,13 +98,13 @@ DWORD WINAPI ClientThread(LPVOID param) {
                         numConnected++;
 
                         char msg[32];
-                        sprintf(msg, "[USER_CONNECT] %s - New user enters chat room!\n", accTable[client]);
+                        sprintf(msg, "USER_CONNECT %s - New user enters chat room!\n", accTable[client]);
                         SendAll(client, msg, 0);
                         break;
                     }
                     else
                     {
-                        const char* msg = "[CONNECT] ERROR - This user's id already exist!\n";
+                        const char* msg = "CONNECT ERROR - This user's id already exist!\n";
                         send(client, msg, strlen(msg), 0);
                     }
                 }
@@ -116,19 +117,19 @@ DWORD WINAPI ClientThread(LPVOID param) {
         {
             ret = recv(client, buff, sizeof(buff), 0);
             buff[ret] = 0;
-            printf("Data from %d: %s",(int)client, buff);
+            printf("Data from %d: %s\n",(int)client, buff);
 
             ret = sscanf(buff, "%s %s", cmd, id);
 
             int lengthCode = strlen(cmd) + strlen(id) + 2;
 
-            if (strcmp(cmd, "[SEND]")==0)
+            if (strcmp(cmd, "SEND")==0)
             {
                 int success = 0;
                 if (strcmp(id, "ALL") == 0)
                 {
                     char msg[32];
-                    sprintf(msg, "[MESSAGE_ALL] %s: %s", accTable[client], buff + lengthCode);
+                    sprintf(msg, "MESSAGE_ALL %s: %s", accTable[client], buff + lengthCode);
                     success = SendAll(client, msg, 0);
                 }
                 else
@@ -138,7 +139,7 @@ DWORD WINAPI ClientThread(LPVOID param) {
                         if (strncmp(id, accTable[connected[i]], strlen(id))==0)
                         {
                             char msg[32];
-                            sprintf(msg, "[MESSAGE] %s: %s", accTable[client], buff + lengthCode);
+                            sprintf(msg, "MESSAGE %s: %s", accTable[client], buff + lengthCode);
                             success = send(connected[i], msg, strlen(msg), 0);
                             break;
                         }
@@ -146,21 +147,21 @@ DWORD WINAPI ClientThread(LPVOID param) {
                 }
                 if (success)
                 {
-                    const char* msg = "[SEND] OK-Gui tin nhan thanh cong!\n";
+                    const char* msg = "SEND OK-Gui tin nhan thanh cong!\n";
                     send(client, msg, strlen(msg), 0);
                 }
 
                 else
                 {
-                    const char* msg = "[SEND] ERROR error_message - Gui tin nhan that bai!\n";
+                    const char* msg = "SEND ERROR error_message - Gui tin nhan that bai!\n";
                     send(client, msg, strlen(msg), 0);
                 }
 
             }
 
-            else if (strcmp(cmd, "[LIST]") == 0)
+            else if (strcmp(cmd, "LIST") == 0)
             {
-                char temp[256] = "[LIST] OK";
+                char temp[256] = "LIST OK";
 
                 for (int i = 0; i < numConnected; i++)
                 {
@@ -173,14 +174,14 @@ DWORD WINAPI ClientThread(LPVOID param) {
             
                 if (ret < 0)
                 {
-                    const char* msg = "[LIST] ERROR - Lay danh sach that bai!";
+                    const char* msg = "LIST ERROR - Lay danh sach that bai!";
                     send(client, msg, strlen(msg), 0);
                 }
             }
 
-            else if (strcmp(cmd, "[DISCONNECT]") == 0) {
+            else if (strcmp(cmd, "DISCONNECT") == 0) {
                 char msg[32];
-                sprintf(msg, "[USER_DISCONNECT] %s\n",accTable[client]);
+                sprintf(msg, "USER_DISCONNECT %s\n",accTable[client]);
                 SendAll(client, msg, 0);
                 RemoveClient(client);
                 accTable.erase(client);
