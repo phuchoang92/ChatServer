@@ -14,7 +14,7 @@ using namespace std;
 
 HINSTANCE hInst;                                
 WCHAR szTitle[MAX_LOADSTRING];                  
-WCHAR szWindowClass[MAX_LOADSTRING];           
+WCHAR szWindowClass[MAX_LOADSTRING];
 TCHAR szWindowClassd[MAX_LOADSTRING];
 
 ATOM                MyRegisterClass(HINSTANCE hInstance);
